@@ -317,17 +317,14 @@ def processar_csv(arquivo_path):
             log_processamento.append(f'Registro {i}:')
             log_processamento.append(f'  COMP1("{comp1}" → código:{codigo1} argumento:"{arg1}")')
             log_processamento.append(f'  COMP2("{comp2}" → código:{codigo2} argumento:"{arg2}")')
-            #log_processamento.append(f'  COMP3("{resultado}" → código:{} argumento:"{arg3}")')
-
-            # Só mostra RESULT se for com três complementos
-            if coluna_complemento_2_vazia or not coluna_complemento_2_vazia:
-                print(coluna_complemento_2_vazia, "complemento 2 vazio")
+            
+            if coluna_complemento_2_vazia:
+                pass
+            else:
                 codigo3 = obter_codigo_complemento(resultado)
                 arg3 = extrair_numero_argumento(resultado)
                 log_processamento.append(f'  COMP3("{resultado}" → código:{codigo3} argumento:"{arg3}")')
-
                 log_processamento.append('-' * 50)
-            
           
 
     zip_filename = os.path.join(app.config['DOWNLOAD_FOLDER'], f'{diretorio_principal}.zip')
