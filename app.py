@@ -315,14 +315,17 @@ def processar_csv(arquivo_path):
             arg1 = extrair_numero_argumento(comp1)
             arg2 = extrair_numero_argumento(comp2)
             log_processamento.append(f'Registro {i}:')
-            log_processamento.append(f'  COMP1("{comp1}" → código:{codigo1} argumento:"{arg1}")')
-            log_processamento.append(f'  COMP2("{comp2}" → código:{codigo2} argumento:"{arg2}")')
-            
+
             if coluna_complemento_2_vazia:
-                pass
+                log_processamento.append(f'  COMP1("{comp1}" → código:{codigo1} argumento:"{arg1}")')
+                log_processamento.append(f'  COMP2("{comp2}" → código:{codigo2} argumento:"{arg2}")')
+                log_processamento.append('-' * 50)
+                
             else:
                 codigo3 = obter_codigo_complemento(resultado)
                 arg3 = extrair_numero_argumento(resultado)
+                log_processamento.append(f'  COMP1("{comp1}" → código:{codigo1} argumento:"{arg1}")')
+                log_processamento.append(f'  COMP2("{comp2}" → código:{codigo2} argumento:"{arg2}")')
                 log_processamento.append(f'  COMP3("{resultado}" → código:{codigo3} argumento:"{arg3}")')
                 log_processamento.append('-' * 50)
           
@@ -431,6 +434,19 @@ def download_file(filename):
 def sobre():
     return render_template('sobre.html')
 
+
+@app.route('/download-modelo-csv')
+def download_modelo_csv():
+    modelo_path = os.path.join(os.path.dirname(__file__), 'csv_modelo', 'modelo.csv')
+    if not os.path.exists(modelo_path):
+        flash('Arquivo modelo não encontrado.')
+        return redirect(url_for('index'))
+    return send_file(
+        modelo_path,
+        as_attachment=True,
+        download_name='modelo.csv',
+        mimetype='text/csv'
+    )
 # Templates HTML
 def criar_templates():
     templates_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -443,6 +459,9 @@ def criar_templates():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de XML para Edificações</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Link para Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/telemont.ico') }}">
     <style>
         .container { max-width: 800px; }
         .upload-box { border: 2px dashed #ccc; padding: 2rem; text-align: center; }
@@ -453,6 +472,7 @@ def criar_templates():
     <div class="container mt-5">
         <div class="row">
             <div class="col-12 text-center">
+                <img src="{{ url_for('static', filename='img/telemont.png') }}" alt="Logo Telemont" class="img-fluid p-3" style="width: 300px; display: block; margin: 0px auto;">
                 <h1 class="mb-4">📁 Gerador de XML para Edificações</h1>
                 <p class="lead">Faça upload de um arquivo CSV para gerar arquivos XML</p>
             </div>
@@ -496,18 +516,27 @@ def criar_templates():
                         <h5>ℹ️ Informações do CSV</h5>
                     </div>
                     <div class="card-body">
-                        <p>O arquivo CSV deve conter as seguintes colunas:</p>
+                    <p><strong>Tem duas forma de gerar o XML:</strong></p>
                         <ul>
-                            <li>COMPLEMENTO, COMPLEMENTO2, RESULTADO</li>
-                            <li>LATITUDE, LONGITUDE, COD_ZONA</li>
-                            <li>LOCALIDADE, LOGRADOURO, BAIRRO</li>
-                            <li>MUNICIPIO, UF, COD_LOGRADOURO</li>
-                            <li>ID_ENDERECO, ID_ROTEIRO, ID_LOCALIDADE</li>
-                            <li>CEP, NUM_FACHADA, COD_SURVEY</li>
-                            <li>QUANTIDADE_UMS, UCS_RESIDENCIAIS, UCS_COMERCIAIS</li>
+                            <li><strong>Com dois complementos:</strong> Preencher as colunas COMPLEMENTO e COMPLEMENTO2 e deixar a coluna COMPLEMENTO3 vazia</li>
+                            <li><strong>Com três complementos:</strong> Preencher as colunas COMPLEMENTO, COMPLEMENTO2 e RESULTADO</li>
                         </ul>
-                        <p><strong>Separador:</strong> Ponto e vírgula (;)</p>
-                    </div>
+                    <br>
+                    <p><strong>O arquivo CSV deve conter as seguintes colunas:</strong></p>
+                    <ul>
+                        <li>COMPLEMENTO, COMPLEMENTO2, RESULTADO</li>
+                        <li>LATITUDE, LONGITUDE, COD_ZONA</li>
+                        <li>LOCALIDADE, LOGRADOURO, BAIRRO</li>
+                        <li>MUNICIPIO, UF, COD_LOGRADOURO</li>
+                        <li>ID_ENDERECO, ID_ROTEIRO, ID_LOCALIDADE</li>
+                        <li>CEP, NUM_FACHADA, COD_SURVEY</li>
+                        <li>QUANTIDADE_UMS, UCS_RESIDENCIAIS, UCS_COMERCIAIS</li>
+                    </ul>
+                    <p><strong>Separador:</strong> Ponto e vírgula (;)</p>
+                    <a href="{{ url_for('download_modelo_csv') }}" class="btn btn-success mt-3">
+                    📥 Baixar modelo CSV <i class="fas fa-file-excel" style="color: white; font-size: 30px;"></i>
+                </a>
+                </div>
                 </div>
             </div>
         </div>
