@@ -157,7 +157,7 @@ def criar_xml_edificio_com_dois_complementos(dados_csv, numero_pasta):
     return xml_completo
 
 
-def criar_xml_edificio_com_tres_complementos(dados_csv, numero_pasta):
+def criar_xml_edificio_com_tres_complementos(dados_csv, numero_pasta, complemento_vazio):
     edificio = ET.Element('edificio')
     edificio.set('tipo', 'M')
     edificio.set('versao', '7.9.2')
@@ -190,12 +190,15 @@ def criar_xml_edificio_com_tres_complementos(dados_csv, numero_pasta):
     ET.SubElement(endereco, 'argumento2').text = argumento2
 
     # Só adiciona complemento3 se não estiver vazio
-    complemento3 = dados_csv['RESULTADO'] if 'RESULTADO' in dados_csv else ''
-    if not pd.isna(complemento3) and str(complemento3).strip() != '':
-        codigo_complemento3 = obter_codigo_complemento(complemento3)
-        argumento3 = extrair_numero_argumento(complemento3)
-        ET.SubElement(endereco, 'id_complemento3').text = codigo_complemento3
-        ET.SubElement(endereco, 'argumento3').text = argumento3
+    print("complemento vazio xml: ", complemento_vazio)
+    if complemento_vazio == False:
+        complemento3 = dados_csv['RESULTADO'] if 'RESULTADO' in dados_csv else ''
+        if not pd.isna(complemento3) and str(complemento3).strip() != '':
+            codigo_complemento3 = obter_codigo_complemento(complemento3)
+            argumento3 = extrair_numero_argumento(complemento3)
+            ET.SubElement(endereco, 'id_complemento3').text = codigo_complemento3
+            ET.SubElement(endereco, 'argumento3').text = argumento3
+            print("complemento 3 adicionado")
 
     cep = str(dados_csv['CEP']) if 'CEP' in dados_csv and not pd.isna(dados_csv['CEP']) else '71065071'
     ET.SubElement(endereco, 'cep').text = cep
@@ -222,6 +225,8 @@ def criar_xml_edificio_com_tres_complementos(dados_csv, numero_pasta):
     xml_completo = b'<?xml version="1.0" encoding="UTF-8"?>' + xml_str
     return xml_completo 
 
+def validador_xml(xml_content, complemento_vazio):
+    pass
     
 def processar_csv(arquivo_path):
     global LOG_COMPLEMENTOS
@@ -257,14 +262,15 @@ def processar_csv(arquivo_path):
     
 
 
-    # Verifica se a coluna COMPLEMENTO3 e COMPLEMENTO2 estão totalmente vazias
-    coluna_complemento_3_vazia = df['COMPLEMENTO3'].isna().all() or (df['COMPLEMENTO3'].astype(str).str.strip() == '').all()
-    coluna_complemento_2_vazia = df['COMPLEMENTO2'].isna().all() or (df['COMPLEMENTO2'].astype(str).str.strip() == '').all()
+   
     
-    print("Usando 2 complementos", coluna_complemento_2_vazia)
-    print("Usando 3 complementos", coluna_complemento_3_vazia)
+    
 
     for i, (index, linha) in enumerate(df.iterrows(), 1):
+         # Verifica se a coluna COMPLEMENTO3 e COMPLEMENTO2 estão totalmente vazias
+        coluna_complemento_2_vazia = df['COMPLEMENTO3'].isna().all() or (df['COMPLEMENTO3'].astype(str).str.strip() == '').all()
+        
+        print("coluna complemento 2 vazia:", coluna_complemento_2_vazia)
         nome_pasta = f'moradia{i}'
         caminho_pasta = os.path.join(diretorio_principal, nome_pasta)
         os.makedirs(caminho_pasta, exist_ok=True)
@@ -274,40 +280,30 @@ def processar_csv(arquivo_path):
         comp2 = linha['COMPLEMENTO2'] if 'COMPLEMENTO2' in linha else ''
         resultado = linha['RESULTADO'] if 'RESULTADO' in linha else ''
 
-        # Se a coluna RESULTADO está totalmente vazia, sempre usa 2 complementos
-       # if not coluna_complemento_2_vazia:
-            
-        #    if coluna_complemento_2_vazia:
-         #       ERRO_COMPLEMENTO2 = True
-          #      LOG_COMPLEMENTOS = "ERRO: no CSV na coluna do [COMPLEMENTO2], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO2 teve ser preenchidas para gerar o xml com 2 complementos."
-           # xml_content = criar_xml_edificio_com_dois_complementos(linha, i)
-            #LOG_COMPLEMENTOS = "(XML) com dois complementos gerado com sucesso! Agora é só fazer o download do zip!"
-        #else:
-            #if not coluna_complemento_3_vazia:
-             #   ERRO_COMPLEMENTO3 = True
-            #xml_content = criar_xml_edificio_com_tres_complementos(linha, i)
-            #LOG_COMPLEMENTOS = "(XML) com três complementos gerado com sucesso! Agora é só fazer o download do zip!"
-        
-        if coluna_complemento_2_vazia:
-            LOG_COMPLEMENTOS = "ERRO: no CSV na coluna do [COMPLEMENTO2], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO2 teve ser preenchidas para gerar o xml com 2 complementos."
-            ERRO_COMPLEMENTO2 = True
-            xml_content = criar_xml_edificio_com_dois_complementos(linha, i)
-                 
-        else:
-            ERRO_COMPLEMENTO2 = False
-            xml_content = criar_xml_edificio_com_dois_complementos(linha, i)
-            LOG_COMPLEMENTOS = "(XML) com dois complementos gerado com sucesso! Agora é só fazer o download do zip!"
+        xml_content = criar_xml_edificio_com_tres_complementos(linha, i, coluna_complemento_2_vazia)
 
-        # if not coluna_complemento_3_vazia:
-        #     LOG_COMPLEMENTOS = "ERRO: no CSV na coluna do [COMPLEMENTO3], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO3 teve ser preenchidas para gerar o xml com 3 complementos."
-        #     ERRO_COMPLEMENTO3 = True
-        #     xml_content = criar_xml_edificio_com_tres_complementos(linha, i)
-                 
-        # else:
-        #     ERRO_COMPLEMENTO3 = False
-        #     xml_content = criar_xml_edificio_com_tres_complementos(linha, i)
-        #     LOG_COMPLEMENTOS = "(XML) com três complementos gerado com sucesso! Agora é só fazer o download do zip!"
-            
+        # validação dos complementos
+        if comp1 == '' or pd.isna(comp1):
+            ERRO_COMPLEMENTO2 = True
+            LOG_COMPLEMENTOS = "⚠️(ERRO) no CSV na coluna do [COMPLEMENTO1], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO2 teve ser preenchidas para gerar o xml com 2 complementos."
+        
+        elif comp2 == '' or pd.isna(comp2):
+            ERRO_COMPLEMENTO2 = True
+            LOG_COMPLEMENTOS = "⚠️(ERRO) no CSV na coluna do [COMPLEMENTO2], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO2 teve ser preenchidas para gerar o xml com 2 complementos."
+
+        elif resultado == '' or pd.isna(resultado):
+            ERRO_COMPLEMENTO3 = True
+            LOG_COMPLEMENTOS = "⚠️(ERRO) no CSV na coluna do [COMPLEMENTO3], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO3 teve ser preenchidas para gerar o xml com 3 complementos."
+        
+        elif coluna_complemento_2_vazia:
+            ERRO_COMPLEMENTO3 = False
+            ERRO_COMPLEMENTO2 = False
+            LOG_COMPLEMENTOS = "✅(XML) com dois complementos gerado com sucesso! Agora é só fazer o download do zip!"
+        else:
+            ERRO_COMPLEMENTO3 = False
+            ERRO_COMPLEMENTO2 = False
+            LOG_COMPLEMENTOS = "✅(XML) com três complementos gerado com sucesso! Agora é só fazer o download do zip!"
+
 
         caminho_xml = os.path.join(caminho_pasta, f'{nome_pasta}.xml')
         with open(caminho_xml, 'wb') as f:
@@ -321,19 +317,18 @@ def processar_csv(arquivo_path):
             log_processamento.append(f'Registro {i}:')
             log_processamento.append(f'  COMP1("{comp1}" → código:{codigo1} argumento:"{arg1}")')
             log_processamento.append(f'  COMP2("{comp2}" → código:{codigo2} argumento:"{arg2}")')
+            #log_processamento.append(f'  COMP3("{resultado}" → código:{} argumento:"{arg3}")')
+
             # Só mostra RESULT se for com três complementos
-            if ERRO_COMPLEMENTO2:
-                LOG_COMPLEMENTOS = "ERRO: no CSV na coluna do [COMPLEMENTO2], existem células que estão vazias. Todas as celulas da coluna COMPLEMENTO2 teve ser preenchidas para gerar o xml com 2 complementos."
-            
-            if ERRO_COMPLEMENTO3 :
+            if coluna_complemento_2_vazia or not coluna_complemento_2_vazia:
+                print(coluna_complemento_2_vazia, "complemento 2 vazio")
                 codigo3 = obter_codigo_complemento(resultado)
                 arg3 = extrair_numero_argumento(resultado)
                 log_processamento.append(f'  COMP3("{resultado}" → código:{codigo3} argumento:"{arg3}")')
 
-            log_processamento.append('-' * 50)
+                log_processamento.append('-' * 50)
             
-            if ERRO_COMPLEMENTO3:
-                LOG_COMPLEMENTOS = "ERRO: no CSV na coluna do [RESULTADO], existem células que estão vazias. Todas as celulas da coluna resultado teve ser preenchidas para gerar o xml com 3 complementos."
+          
 
     zip_filename = os.path.join(app.config['DOWNLOAD_FOLDER'], f'{diretorio_principal}.zip')
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -384,8 +379,14 @@ def index():
                 flash(f'Processamento concluído! {total_registros} registros processados.')
                 #alert_type = "danger" if ERRO_COMPLEMENTO3 or ERRO_COMPLEMENTO2 else "info"
                 
-                alert_type = "danger" if ERRO_COMPLEMENTO2 or ERRO_COMPLEMENTO3 else "info"
-
+                #alert_type = "danger" if ERRO_COMPLEMENTO2 or ERRO_COMPLEMENTO3 else "info"
+                if ERRO_COMPLEMENTO2 or ERRO_COMPLEMENTO3:
+                    alert_type = "danger"
+                    
+                else:
+                    alert_type = "info"
+                 
+            
                 return render_template('resultado.html', 
                                     complementos = LOG_COMPLEMENTOS,
                                     alert_type=alert_type,
