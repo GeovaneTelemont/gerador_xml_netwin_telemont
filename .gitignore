@@ -1,2 +1,4 @@
 moradias_xml.zip
 downloads/
+*__pycache__/
+*.spec

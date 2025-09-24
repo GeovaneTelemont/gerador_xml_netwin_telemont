@@ -182,7 +182,7 @@ def processar_csv(arquivo_path):
             try:
                 df = pd.read_csv(arquivo_path, sep=';', encoding=encoding)
                 # print(f"Arquivo lido com encoding: {encoding}")
-                break
+                break 
             except UnicodeDecodeError:
                 continue
         else:
