@@ -32,7 +32,7 @@ Este projeto é uma aplicação web para processar arquivos CSV e gerar arquivos
       cd C:\\C:\Users\<usuário>\Desktop\gerador_xml_netwin_telemont
    ```
 
-2. **Crie um ambiente virtual (recomendado):**
+2. **Crie um ambiente virtual dentro do projeto clonado (recomendado):**
    - Instale o virtualenv (caso não tenha):
      ```sh
      pip install virtualenv
@@ -100,3 +100,4 @@ O arquivo CSV deve conter as seguintes colunas (separadas por ponto e vírgula):
 
 
 Este projeto é privado e para uso interno Telemont.
+
