@@ -1,8 +1,16 @@
 ﻿# 📋 Gerador XML Netwin Telemont
-
+[![Python](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
+[![Playwright](https://img.shields.io/badge/playwright-1.55+-green.svg)](https://playwright.dev/docs/intro)
+[![Pandas](https://img.shields.io/badge/pandas-2.3.3+-red.svg)](https://pandas.pydata.org/docs/)
+[![Poetry](https://img.shields.io/badge/Poetry-1.8+-purple.svg)](https://python-poetry.org/)
 Este projeto é uma aplicação web para processar arquivos CSV e gerar arquivos XML organizados em um arquivo ZIP, conforme padrão Netwin/Telemont.
 
 ## ⚙ Funcionalidades
+[![Python](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
+[![Playwright](https://img.shields.io/badge/playwright-1.55+-green.svg)](https://playwright.dev/docs/intro)
+[![Pandas](https://img.shields.io/badge/pandas-2.3.3+-red.svg)](https://pandas.pydata.org/docs/)
+[![Poetry](https://img.shields.io/badge/Poetry-1.8+-purple.svg)](https://python-poetry.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.1+-greey.svg)](https://flask.palletsprojects.com/en/stable/)
 
 - Upload de arquivos CSV via interface web
 - Processamento automático dos dados e geração de XMLs
@@ -100,4 +108,5 @@ O arquivo CSV deve conter as seguintes colunas (separadas por ponto e vírgula):
 
 
 Este projeto é privado e para uso interno Telemont.
+
 
