@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processando Arquivo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/telemont.ico') }}">
+    <style>
+        .container { max-width: 800px; }
+        .progress { height: 25px; margin: 20px 0; }
+        .progress-bar { transition: width 0.3s ease; }
+        .log-container { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 5px; 
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .log-entry { margin-bottom: 5px; white-space: pre-wrap; }
+        .spinner-border { margin-right: 10px; }
+        .connection-status { 
+            position: fixed; 
+            top: 10px; 
+            right: 10px; 
+            padding: 5px 10px; 
+            border-radius: 15px; 
+            font-size: 0.8em;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">
+        <i class="fas fa-circle"></i> <span id="statusText">Conectando...</span>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 text-center">
+                <img src="{{ url_for('static', filename='img/telemont.png') }}" alt="Logo Telemont" class="img-fluid p-3" style="width: 300px; display: block; margin: 0px auto;">
+                <h1 class="mb-4">🔄 Processando Arquivo</h1>
+                <p class="lead" id="statusMessage">Iniciando processamento...</p>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Importante:</strong> Não feche esta página durante o processamento.
+                    Para arquivos grandes, isso pode levar vários minutos.
+                </div>
+                <div id="actionButtons" style="display: none;">
+                    <a href="/conversor-csv" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar ao Conversor
+                    </a>
+                    <a href="/conversor-result" class="btn btn-primary ms-2" id="resultButton">
+                        <i class="fas fa-download"></i> Ir para Download
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>
+                            <i class="fas fa-sync-alt fa-spin" id="statusIcon"></i>
+                            Progresso do Processamento
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Barra de Progresso -->
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 id="progressBar"
+                                 style="width: 0%">
+                                <span id="progressText">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Contadores -->
+                        <div class="row text-center mb-3">
+                            <div class="col-md-4">
+                                <strong>Progresso:</strong>
+                                <div id="progressPercent">0%</div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Linhas Processadas:</strong>
+                                <div id="currentCount">0</div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Total de Linhas:</strong>
+                                <div id="totalCount">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Logs em Tempo Real -->
+                        <h6>Logs do Processamento:</h6>
+                        <div class="log-container" id="logContainer">
+                            <div class="log-entry">🕒 Iniciando monitoramento...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+    <script>
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const currentCount = document.getElementById('currentCount');
+        const totalCount = document.getElementById('totalCount');
+        const logContainer = document.getElementById('logContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusIcon = document.getElementById('statusIcon');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+        const actionButtons = document.getElementById('actionButtons');
+        const resultButton = document.getElementById('resultButton');
+
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        // Função para adicionar log
+        function addLog(message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = message;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Limitar número de logs
+            const logs = logContainer.getElementsByClassName('log-entry');
+            if (logs.length > 100) {
+                logContainer.removeChild(logs[0]);
+            }
+        }
+
+        // Função para atualizar status da conexão
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.className = 'connection-status connected';
+                statusText.innerHTML = '<i class="fas fa-wifi"></i> Conectado';
+                reconnectAttempts = 0;
+            } else {
+                connectionStatus.className = 'connection-status disconnected';
+                statusText.innerHTML = '<i class="fas fa-wifi-slash"></i> Desconectado';
+            }
+        }
+
+        // Função para conectar ao SSE
+        function connectSSE() {
+            updateConnectionStatus(false);
+            
+            const eventSource = new EventSource('/progress');
+
+            eventSource.onopen = function() {
+                console.log('Conexão SSE aberta');
+                updateConnectionStatus(true);
+                addLog('✅ Conectado ao servidor');
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Atualizar barra de progresso
+                    if (data.progress !== undefined) {
+                        progressBar.style.width = data.progress + '%';
+                        progressText.textContent = Math.round(data.progress) + '%';
+                        progressPercent.textContent = Math.round(data.progress) + '%';
+                    }
+                    
+                    // Atualizar contadores
+                    if (data.current !== undefined) {
+                        currentCount.textContent = data.current.toLocaleString();
+                    }
+                    if (data.total !== undefined) {
+                        totalCount.textContent = data.total.toLocaleString();
+                    }
+                    
+                    // Atualizar mensagem de status
+                    if (data.message) {
+                        statusMessage.textContent = data.message;
+                        if (data.message !== 'Aguardando...' && data.message !== 'Conectado...') {
+                            addLog(data.message);
+                        }
+                    }
+                    
+                    // Verificar status
+                    if (data.status === 'completed') {
+                        statusIcon.className = 'fas fa-check-circle text-success';
+                        statusMessage.innerHTML = '<span class="text-success">✅ Processamento concluído com sucesso!</span>';
+                        actionButtons.style.display = 'block';
+                        resultButton.style.display = 'inline-block';
+                        eventSource.close();
+                        
+                    } else if (data.status === 'error') {
+                        statusIcon.className = 'fas fa-exclamation-triangle text-danger';
+                        statusMessage.innerHTML = '<span class="text-danger">❌ Erro no processamento!</span>';
+                        actionButtons.style.display = 'block';
+                        resultButton.style.display = 'none';
+                        eventSource.close();
+                    }
+                    
+                } catch (e) {
+                    console.error('Erro ao processar mensagem:', e);
+                }
+            };
+
+            eventSource.onerror = function(event) {
+                console.error('Erro na conexão SSE:', event);
+                updateConnectionStatus(false);
+                eventSource.close();
+                
+                // Tentar reconectar
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    addLog(`🔁 Tentativa de reconexão ${reconnectAttempts}/${maxReconnectAttempts}...`);
+                    setTimeout(connectSSE, 2000);
+                } else {
+                    addLog('❌ Falha na conexão. Por favor, recarregue a página.');
+                    statusIcon.className = 'fas fa-exclamation-triangle text-danger';
+                    actionButtons.style.display = 'block';
+                }
+            };
+
+            return eventSource;
+        }
+
+        // Iniciar conexão quando a página carregar
+        let sseConnection = connectSSE();
+
+        // Tentar reconectar se a página ficar visível novamente
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && (sseConnection.readyState === EventSource.CLOSED)) {
+                addLog('🔄 Reconectando...');
+                sseConnection = connectSSE();
+            }
+        });
+
+        // Limpar recursos quando a página for fechada
+        window.addEventListener('beforeunload', function() {
+            if (sseConnection) {
+                sseConnection.close();
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

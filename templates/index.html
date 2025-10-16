@@ -12,6 +12,8 @@
         .container { max-width: 800px; }
         .upload-box { border: 2px dashed #ccc; padding: 2rem; text-align: center; }
         .btn-custom { background-color: #0d6efd; color: white; }
+        .card { transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -55,7 +57,38 @@
             {% endif %}
         {% endwith %}
 
+        <!-- NOVA SEÇÃO: Cards lado a lado -->
         <div class="row mt-5">
+            <!-- Card do Modelo CSV -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-download fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">📥 Modelo CSV</h5>
+                        <p class="card-text">Baixe o modelo CSV para usar no gerador de XML</p>
+                        <a href="{{ url_for('download_modelo_csv') }}" class="btn btn-success">
+                            <i class="fas fa-file-excel"></i> Baixar Modelo CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Card do Conversor CSV -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exchange-alt fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">🔄 Conversor CSV</h5>
+                        <p class="card-text">Converta Enderecos_Totais_CO.csv para formato Power Query</p>
+                        <a href="/conversor-csv" class="btn btn-primary">
+                            <i class="fas fa-cogs"></i> Acessar Conversor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
@@ -79,10 +112,7 @@
                         <li>QUANTIDADE_UMS, UCS_RESIDENCIAIS, UCS_COMERCIAIS</li>
                     </ul>
                     <p><strong>Separador:</strong> Ponto e vírgula (;)</p>
-                    <a href="{{ url_for('download_modelo_csv') }}" class="btn btn-success mt-3">
-                    📥 Baixar modelo CSV <i class="fas fa-file-excel" style="color: white; font-size: 30px;"></i>
-                </a>
-                </div>
+                    </div>
                 </div>
             </div>
         </div>
